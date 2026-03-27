@@ -129,17 +129,29 @@ margin-right:auto;
 </button>
 
 <div id="info">
-Default 12‑hour key | Maintenance!
+Default 12‑hour key | Fix system!
 </div>
 
 <script>
 
 /* ======================
-PARAM & REFERRER CHECK
+PARAM CHECK
 ====================== */
+
 let params = new URLSearchParams(window.location.search);
-if(params.get("pass") !== "1" || params.get("step") !== "gplinks"){
-    location.replace("https://kazehayamodz-main-page-zua8.onrender.com");
+let pass = params.get("pass");
+let step = params.get("step");
+
+if(pass !== "1" || step !== "gplinks"){
+location.replace("https://kazehayamodz-main-page-zua8.onrender.com");
+}
+
+/* ======================
+REFRESH BLOCK
+====================== */
+
+if(performance.navigation.type === 1){
+location.replace("https://kazehayamodz-main-page-zua8.onrender.com");
 }
 
 /* ======================
@@ -158,58 +170,101 @@ location.replace("https://kazehayamodz-main-page-zua8.onrender.com");
 /* ======================
 KEY SYSTEM
 ====================== */
+
 async function loadKey(){
-    const keyBox = document.getElementById("key");
-    try {
-        keyBox.innerText = "Connecting to server...";
 
-        // 1. GET TOKEN
-        let tRes = await fetch("https://codm-injector-panel-yxhg.onrender.com/token");
-        let tData = await tRes.json();
+try{
 
-        if(tData.status === "cooldown"){
-            keyBox.innerText = "COOLDOWN: PLEASE WAIT";
-            return;
-        }
+document.getElementById("key").innerText="Generating key...";
 
-        // 2. GET KEY
-        keyBox.innerText = "Verifying access...";
-        let kRes = await fetch(`https://codm-injector-panel-yxhg.onrender.com/getkey?token=${tData.token}`);
-        let kData = await kRes.json();
+/* TOKEN REQUEST */
 
-        if(kData.status === "success"){
-            keyBox.innerText = kData.key;
-            navigator.clipboard.writeText(kData.key).catch(()=>{});
-            startRedirectTimer();
-        } else {
-            keyBox.innerText = kData.message || "Access Denied";
-        }
+let tokenRes = await fetch("https://codm-injector-panel-yxhg.onrender.com/token",{cache:"no-store"});
 
-    } catch(e) {
-        keyBox.innerText = "Connection Error. Refresh Page.";
-    }
+let tokenData = await tokenRes.json();
+
+if(!tokenData.token){
+document.getElementById("key").innerText="Server busy. Try again.";
+return;
 }
+
+let token = tokenData.token;
+
+/* KEY REQUEST */
+
+let keyRes = await fetch(`https://codm-injector-panel-yxhg.onrender.com/getkey?token=${token}`,{cache:"no-store"});
+
+let data = await keyRes.json();
+
+if(data.status !== "success"){
+document.getElementById("key").innerText = data.message || "Key generation failed";
+return;
+}
+
+let key = data.key;
+
+/* SHOW KEY */
+
+document.getElementById("key").innerText = key;
+
+/* AUTO COPY */
+
+navigator.clipboard.writeText(key).catch(()=>{});
+
+/* START REDIRECT */
+
+startRedirectTimer();
+
+}catch(e){
+
+document.getElementById("key").innerText="Server error. Please try again.";
+
+}
+
+}
+
+/* ======================
+20 SECOND REDIRECT
+====================== */
 
 function startRedirectTimer(){
-    let seconds = 20;
-    let timer = document.getElementById("timer");
-    let interval = setInterval(()=>{
-        seconds--;
-        timer.innerText = `Returning to main page in ${seconds}s...`;
-        if(seconds <= 0){
-            clearInterval(interval);
-            location.replace("https://kazehayamodz-main-page-zua8.onrender.com");
-        }
-    }, 1000);
+
+let seconds = 20;
+let timer = document.getElementById("timer");
+
+timer.innerText=`Returning to main page in ${seconds}s...`;
+
+let interval=setInterval(()=>{
+
+seconds--;
+
+timer.innerText=`Returning to main page in ${seconds}s...`;
+
+if(seconds<=0){
+
+clearInterval(interval);
+
+location.replace("https://kazehayamodz-main-page-zua8.onrender.com");
+
 }
+
+},1000);
+
+}
+
+/* ======================
+COPY BUTTON
+====================== */
 
 function copyKey(){
-    let key = document.getElementById("key").innerText;
-    navigator.clipboard.writeText(key);
-    location.replace("https://kazehayamodz-main-page-zua8.onrender.com");
-}
 
-window.onload = loadKey;
+let key=document.getElementById("key").innerText;
+
+navigator.clipboard.writeText(key);
+
+location.replace("https://kazehayamodz-main-page-zua8.onrender.com");
+
+}
 
 /* ======================
 BACK BUTTON BLOCK
