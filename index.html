@@ -147,14 +147,6 @@ location.replace("https://kazehayamodz-main-page-zua8.onrender.com");
 }
 
 /* ======================
-REFRESH BLOCK
-====================== */
-
-if(performance.navigation.type === 1){
-location.replace("https://kazehayamodz-main-page-zua8.onrender.com");
-}
-
-/* ======================
 REFERRER CHECK
 ====================== */
 
@@ -170,57 +162,50 @@ location.replace("https://kazehayamodz-main-page-zua8.onrender.com");
 /* ======================
 KEY SYSTEM
 ====================== */
-
 async function loadKey(){
+    try {
+        document.getElementById("key").innerText = "Generating key...";
 
-try{
+        /* 1. TOKEN REQUEST */
+        // Nagdagdag tayo ng cache: "no-store" para siguradong fresh ang request
+        let tokenRes = await fetch("https://codm-injector-panel-yxhg.onrender.com/token", {cache: "no-store"});
+        let tokenData = await tokenRes.json();
 
-document.getElementById("key").innerText="Generating key...";
+        // Kung ang status ay 'cooldown', ibig sabihin bawal pa talaga kumuha
+        if(tokenData.status === "cooldown"){
+            document.getElementById("key").innerText = "COOLDOWN ACTIVE";
+            alert("Please wait for the cooldown to finish.");
+            location.replace(tokenData.redirect);
+            return;
+        }
 
-/* TOKEN REQUEST */
+        let token = tokenData.token;
 
-let tokenRes = await fetch("https://codm-injector-panel-yxhg.onrender.com/token",{cache:"no-store"});
+        /* 2. KEY REQUEST */
+        let keyRes = await fetch(`https://codm-injector-panel-yxhg.onrender.com/getkey?token=${token}`, {cache: "no-store"});
+        let data = await keyRes.json();
 
-let tokenData = await tokenRes.json();
+        if(data.status !== "success"){
+            // Ipakita ang message galing sa server (halimbawa: "Limit reached")
+            document.getElementById("key").innerText = data.message || "Failed";
+            return;
+        }
 
-if(!tokenData.token){
-document.getElementById("key").innerText="Server busy. Try again.";
-return;
-}
+        /* 3. SHOW KEY */
+        // Kahit "New Key" o "Restored Key", ipapakita natin dito
+        let key = data.key;
+        document.getElementById("key").innerText = key;
 
-let token = tokenData.token;
+        /* 4. AUTO COPY */
+        navigator.clipboard.writeText(key).catch(()=>{});
 
-/* KEY REQUEST */
+        /* 5. START REDIRECT */
+        startRedirectTimer();
 
-let keyRes = await fetch(`https://codm-injector-panel-yxhg.onrender.com/getkey?token=${token}`,{cache:"no-store"});
-
-let data = await keyRes.json();
-
-if(data.status !== "success"){
-document.getElementById("key").innerText = data.message || "Key generation failed";
-return;
-}
-
-let key = data.key;
-
-/* SHOW KEY */
-
-document.getElementById("key").innerText = key;
-
-/* AUTO COPY */
-
-navigator.clipboard.writeText(key).catch(()=>{});
-
-/* START REDIRECT */
-
-startRedirectTimer();
-
-}catch(e){
-
-document.getElementById("key").innerText="Server error. Please try again.";
-
-}
-
+    } catch(e) {
+        console.log(e);
+        document.getElementById("key").innerText = "Server error. Try again.";
+    }
 }
 
 /* ======================
