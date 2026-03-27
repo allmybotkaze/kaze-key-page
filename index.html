@@ -135,15 +135,11 @@ Default 12‑hour key | Maintenance!
 <script>
 
 /* ======================
-PARAM CHECK
+PARAM & REFERRER CHECK
 ====================== */
-
 let params = new URLSearchParams(window.location.search);
-let pass = params.get("pass");
-let step = params.get("step");
-
-if(pass !== "1" || step !== "gplinks"){
-location.replace("https://kazehayamodz-main-page-zua8.onrender.com");
+if(params.get("pass") !== "1" || params.get("step") !== "gplinks"){
+    location.replace("https://kazehayamodz-main-page-zua8.onrender.com");
 }
 
 /* ======================
@@ -163,91 +159,57 @@ location.replace("https://kazehayamodz-main-page-zua8.onrender.com");
 KEY SYSTEM
 ====================== */
 async function loadKey(){
+    const keyBox = document.getElementById("key");
     try {
-        document.getElementById("key").innerText = "Generating key...";
+        keyBox.innerText = "Connecting to server...";
 
-        /* 1. TOKEN REQUEST */
-        // Nagdagdag tayo ng cache: "no-store" para siguradong fresh ang request
-        let tokenRes = await fetch("https://codm-injector-panel-yxhg.onrender.com/token", {cache: "no-store"});
-        let tokenData = await tokenRes.json();
+        // 1. GET TOKEN
+        let tRes = await fetch("https://codm-injector-panel-yxhg.onrender.com/token");
+        let tData = await tRes.json();
 
-        // Kung ang status ay 'cooldown', ibig sabihin bawal pa talaga kumuha
-        if(tokenData.status === "cooldown"){
-            document.getElementById("key").innerText = "COOLDOWN ACTIVE";
-            alert("Please wait for the cooldown to finish.");
-            location.replace(tokenData.redirect);
+        if(tData.status === "cooldown"){
+            keyBox.innerText = "COOLDOWN: PLEASE WAIT";
             return;
         }
 
-        let token = tokenData.token;
+        // 2. GET KEY
+        keyBox.innerText = "Verifying access...";
+        let kRes = await fetch(`https://codm-injector-panel-yxhg.onrender.com/getkey?token=${tData.token}`);
+        let kData = await kRes.json();
 
-        /* 2. KEY REQUEST */
-        let keyRes = await fetch(`https://codm-injector-panel-yxhg.onrender.com/getkey?token=${token}`, {cache: "no-store"});
-        let data = await keyRes.json();
-
-        if(data.status !== "success"){
-            // Ipakita ang message galing sa server (halimbawa: "Limit reached")
-            document.getElementById("key").innerText = data.message || "Failed";
-            return;
+        if(kData.status === "success"){
+            keyBox.innerText = kData.key;
+            navigator.clipboard.writeText(kData.key).catch(()=>{});
+            startRedirectTimer();
+        } else {
+            keyBox.innerText = kData.message || "Access Denied";
         }
-
-        /* 3. SHOW KEY */
-        // Kahit "New Key" o "Restored Key", ipapakita natin dito
-        let key = data.key;
-        document.getElementById("key").innerText = key;
-
-        /* 4. AUTO COPY */
-        navigator.clipboard.writeText(key).catch(()=>{});
-
-        /* 5. START REDIRECT */
-        startRedirectTimer();
 
     } catch(e) {
-        console.log(e);
-        document.getElementById("key").innerText = "Server error. Try again.";
+        keyBox.innerText = "Connection Error. Refresh Page.";
     }
 }
 
-/* ======================
-20 SECOND REDIRECT
-====================== */
-
 function startRedirectTimer(){
-
-let seconds = 20;
-let timer = document.getElementById("timer");
-
-timer.innerText=`Returning to main page in ${seconds}s...`;
-
-let interval=setInterval(()=>{
-
-seconds--;
-
-timer.innerText=`Returning to main page in ${seconds}s...`;
-
-if(seconds<=0){
-
-clearInterval(interval);
-
-location.replace("https://kazehayamodz-main-page-zua8.onrender.com");
-
+    let seconds = 20;
+    let timer = document.getElementById("timer");
+    let interval = setInterval(()=>{
+        seconds--;
+        timer.innerText = `Returning to main page in ${seconds}s...`;
+        if(seconds <= 0){
+            clearInterval(interval);
+            location.replace("https://kazehayamodz-main-page-zua8.onrender.com");
+        }
+    }, 1000);
 }
-
-},1000);
-
-}
-
-/* ======================
-COPY BUTTON
-====================== */
 
 function copyKey(){
+    let key = document.getElementById("key").innerText;
+    navigator.clipboard.writeText(key);
+    location.replace("https://kazehayamodz-main-page-zua8.onrender.com");
+}
 
-let key=document.getElementById("key").innerText;
-
-navigator.clipboard.writeText(key);
-
-location.replace("https://kazehayamodz-main-page-zua8.onrender.com");
+window.onload = loadKey;
 
 }
 
